@@ -114,6 +114,7 @@ Modificar las rutas al inicio del script:
 Para analizar un único archivo .csv, escribe la ruta completa del archivo:
 
 `INPUT_PATH = r"ruta/al/archivo_o_carpeta"`
+
 `OUTPUT_DIR = r"ruta/a/la/carpeta_de_resultados"`
 
 **Análisis de una carpeta completa**
@@ -122,6 +123,7 @@ También puedes analizar una carpeta completa con múltiples archivos .csv.
 En ese caso, coloca como `INPUT_PATH` la ruta de la carpeta:
 
 `INPUT_PATH = r"C:\Users\Usuario\Desktop\csvs_DLC"`
+
 `OUTPUT_DIR = r"C:\Users\Usuario\Desktop\resultados_angulos"`
 
 El script buscará automáticamente archivos `.csv` dentro de esa carpeta.
