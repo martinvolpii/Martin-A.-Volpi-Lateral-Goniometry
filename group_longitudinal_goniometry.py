@@ -36,7 +36,7 @@ METADATA_PATH = r"C:\CAMBIA\ESTA\RUTA\metadata_goniometry.csv"
 OUTPUT_DIR = r"C:\CAMBIA\ESTA\RUTA\resultados_grupales"
 
 STAGE_ORDER = ["P30", "P37", "P44", "P51", "P65", "P85"]
-GROUP_ORDER = ["WT", "SOD"]
+GROUP_ORDER = ["WT", "SOD1"]
 
 BASELINE_STAGE = "P30"
 FINAL_STAGE = "P85"
