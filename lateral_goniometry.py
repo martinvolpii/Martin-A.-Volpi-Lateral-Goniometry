@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Analisis lateral de angulos tipo Fig. 8 desde CSV de DeepLabCut.
+Analisis lateral de angulos desde CSV de DeepLabCut.
 
 QUE HACE:
 1. Lee un CSV filtrado de DeepLabCut.
@@ -18,9 +18,14 @@ QUE HACE:
 7. Promedia los ciclos del video.
 8. Exporta CSVs y graficos.
 
+Este script corresponde a la etapa 1 del analisis.
+Procesa archivos CSV de DeepLabCut y genera resumenes angulares por video.
+No realiza analisis grupal ni longitudinal.
+
 IMPORTANTE:
 - No necesitas escala pixel/cm para angulos.
-- Cada video entrega valores del video. Para estadistica final debes promediar por raton/estadio.
+- Cada video entrega valores del video.
+- Para estadistica final debes usar un valor por raton/estadio.
 - Idealmente usa 10-15 ciclos validos por raton/estadio.
 
 REQUISITOS:
@@ -203,7 +208,6 @@ def detect_cycles_from_toe(coords, fps):
         prominence=prominence
     )
 
-    # Si detecta muy pocos ciclos, intenta criterio menos estricto.
     if len(peaks) < 3:
         peaks, _ = find_peaks(toe_height, distance=min_distance)
 
@@ -351,16 +355,18 @@ def process_one_csv(csv_path, output_dir):
 
     stem = csv_path.stem
 
-    # Guardar salidas
     angles_df.to_csv(output_dir / f"{stem}_frame_angles.csv", index=False)
     cycles_df.to_csv(output_dir / f"{stem}_cycle_angle_profiles.csv", index=False)
     per_cycle_ranges.to_csv(output_dir / f"{stem}_ranges_by_cycle.csv", index=False)
 
     if not video_summary.empty:
         video_summary.insert(0, "file", csv_path.name)
-        video_summary.insert(1, "fps", FPS)
-        video_summary.insert(2, "pcutoff", PCUTOFF)
-        video_summary.insert(3, "smooth_window", SMOOTH_WINDOW)
+        video_summary.insert(1, "animal", "NA")
+        video_summary.insert(2, "group", "NA")
+        video_summary.insert(3, "stage", "NA")
+        video_summary.insert(4, "fps", FPS)
+        video_summary.insert(5, "pcutoff", PCUTOFF)
+        video_summary.insert(6, "smooth_window", SMOOTH_WINDOW)
         video_summary.to_csv(output_dir / f"{stem}_video_summary.csv", index=False)
 
     plot_joint_profiles(cycles_df, output_dir, stem)
