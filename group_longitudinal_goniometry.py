@@ -7,7 +7,7 @@ Analisis grupal y longitudinal de goniometria lateral.
 Este script corresponde a la etapa 2 del analisis.
 
 QUE HACE:
-1. Lee los archivos *_video_summary.csv generados por base_goniometry.py.
+1. Lee los archivos *_video_summary.csv generados por lateral_goniometry.py.
 2. Usa una tabla de metadata para identificar animal, grupo y estadio.
 3. Une todos los videos en una tabla por video.
 4. Promedia videos repetidos dentro de cada animal y estadio.
@@ -104,7 +104,7 @@ def ordered_unique(values, preferred_order=None):
 
 def read_video_summaries(summary_dir):
     """
-    Lee todos los archivos *_video_summary.csv generados por base_goniometry.py.
+    Lee todos los archivos *_video_summary.csv generados por lateral_goniometry.py.
     """
     summary_dir = Path(summary_dir)
     files = sorted(summary_dir.rglob("*_video_summary.csv"))
