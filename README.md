@@ -134,22 +134,29 @@ Los parámetros principales del script son:
 
 *| Parámetro |*
 |---|---|
+
 |`FPS` = 30| 
+
 |`PCUTOFF` = 0.80| 
+
 |`SMOOTH_WINDOW` = 10|
+
 |`N_POINTS_PER_CYCLE` = 51| 
 
 |FPS|Corresponde a los fotogramas por segundo del video|
+
 |PCUTOFF|Es el umbral mínimo de confianza de DeepLabCut| Si un punto tiene likelihood menor que este valor, el código lo considera de baja confianza, lo reemplaza temporalmente por NaN y luego interpola su posición.
+
 |SMOOTH_WINDOW|Define el suavizado temporal aplicado a las coordenadas| Un valor mayor suaviza más la señal, pero puede reducir detalles rápidos del movimiento.
+
 |N_POINTS_PER_CYCLE|Define a cuántos puntos se normaliza cada ciclo de marcha| Esto significa que cada ciclo se representa desde 0% hasta 100% usando 51 puntos.
 
 ## Archivos de salida
 
 El script genera los siguientes archivos por cada video analizado:
 
-| Archivo |                                                     Contenido |
-|----------------------|--------------------------------------------------|
+| Archivo | Contenido |
+|---|---|
 | `*_frame_angles.csv` | Ángulos articulares frame a frame |
 | `*_cycle_angle_profiles.csv` | Perfiles angulares por ciclo normalizado |
 | `*_ranges_by_cycle.csv` | Rango angular de cada ciclo |
