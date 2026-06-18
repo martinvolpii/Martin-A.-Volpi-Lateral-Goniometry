@@ -6,7 +6,7 @@ gait_phase.py
 
 Analisis independiente de fases del ciclo de marcha desde CSV de DeepLabCut.
 
-Este script analiza:
+Este script esta inspirado en la logica de los repositorios de KiehnLab/Allodi:
 - puntos laterales: crest, hip, knee, ankle, foot, toe
 - suavizado temporal de coordenadas
 - deteccion de ciclos con peaks del toe
@@ -62,7 +62,6 @@ STAGE_ORDER = ["P30", "P37", "P44", "P51", "P65", "P85"]
 GROUP_ORDER = ["WT", "SOD1"]
 
 # Umbral de swing en unidades normalizadas.
-# En la logica Kiehn/Allodi, dentro de cada ciclo se lleva el toe al suelo = 0.
 # swing = toe y foot por encima de este umbral.
 SWING_HEIGHT_THRESHOLD_NORM = 0.03
 
@@ -86,7 +85,9 @@ MIN_PHASE_RUN_FRAMES = 2
 
 # Stick diagram.
 STICK_PERCENTAGES_TO_PLOT = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-STICK_SPACING = 0.35
+STICK_SPACING = 0.35  # usado solo para el CSV/compatibilidad
+STICK_DELTA = 0.045
+STICK_STANCE_DELTA_FACTOR = 0.10
 
 # Si tus puntos se llaman distinto en DeepLabCut, cambia el nombre de la derecha.
 # La izquierda NO la cambies.
@@ -589,44 +590,62 @@ def plot_toe_clearance_drag(cycles_df, output_dir, stem):
     plt.close(fig)
 
 
-def plot_stick_diagram(stick_df, output_dir, stem):
-    if stick_df.empty:
+def plot_stick_diagram(x_norm, y_height, cycles_df, output_dir, stem):
+    """
+    Stick diagram continuo estilo Kiehn/Allodi.
+
+    Esta version no dibuja solo 0,10,20...% del ciclo.
+    Dibuja todos los frames de los ciclos usados, avanzando poco durante stance
+    y mas durante swing, siguiendo la logica visual de makeStickFigure del repositorio original.
+
+    Gris = stance estimado.
+    Rojo = swing estimado.
+    """
+    selected = cycles_df[cycles_df["used_for_summary"]].copy()
+    if selected.empty:
         return
 
-    # Promedio por porcentaje y punto anatomico.
-    mean_stick = (
-        stick_df
-        .groupby(["percent_gait_cycle", "bodypart"], as_index=False)
-        .agg(
-            x_aligned_norm=("x_aligned_norm", "mean"),
-            y_relative_norm=("y_relative_norm", "mean"),
-            swing_probability=("swing_probability_at_percent", "mean"),
-        )
-    )
+    fig, ax = plt.subplots(figsize=(14, 3.2))
 
-    fig, ax = plt.subplots(figsize=(12, 3.5))
+    step = 0.0
 
-    for idx, percent in enumerate(STICK_PERCENTAGES_TO_PLOT):
-        all_percents = mean_stick["percent_gait_cycle"].to_numpy(dtype=float)
-        nearest_percent = all_percents[np.argmin(np.abs(all_percents - percent))]
-        sub = mean_stick[mean_stick["percent_gait_cycle"] == nearest_percent].copy()
-        sub["bodypart"] = pd.Categorical(sub["bodypart"], categories=BODYPART_ORDER, ordered=True)
-        sub = sub.sort_values("bodypart")
+    for _, row in selected.iterrows():
+        start_frame = int(row["start_frame"])
+        end_frame = int(row["end_frame"])
 
-        x = sub["x_aligned_norm"].to_numpy(dtype=float) + idx * STICK_SPACING
-        y = sub["y_relative_norm"].to_numpy(dtype=float)
-        swing_prob = sub["swing_probability"].mean()
-        color = "tab:red" if swing_prob >= 0.5 else "tab:gray"
+        result = classify_phase_for_cycle(y_height, start_frame, end_frame)
+        if result is None:
+            continue
 
-        ax.plot(x, y, marker="o", linewidth=1.2, markersize=3, color=color, alpha=0.9)
+        stance, swing, toe_rel, foot_rel, ground_norm = result
 
-    ax.set_title("Stick diagram promedio: stance gris, swing rojo")
+        for local_idx, frame_idx in enumerate(range(start_frame, end_frame)):
+            x_frame = x_norm[frame_idx, :].copy()
+            y_frame = y_height[frame_idx, :].copy() - ground_norm
+
+            if swing[local_idx]:
+                step += STICK_DELTA
+                color = "tab:red"
+            else:
+                step += STICK_STANCE_DELTA_FACTOR * STICK_DELTA
+                color = "tab:gray"
+                # En el codigo original, durante stance se tira la punta al suelo.
+                y_frame = y_frame - y_frame[TOE_INDEX]
+
+            ax.plot(
+                x_frame + step,
+                y_frame + 0.10,
+                color=color,
+                linewidth=0.35,
+                alpha=0.80,
+            )
+
+    ax.set_title("Stick diagram continuo: stance gris, swing rojo")
     ax.set_aspect("equal", adjustable="datalim")
     ax.axis("off")
     fig.tight_layout()
     fig.savefig(Path(output_dir) / f"{stem}_stick_diagram_kiehn_style.png", dpi=300)
     plt.close(fig)
-
 
 def process_one_csv(csv_path, output_dir):
     csv_path = Path(csv_path)
@@ -672,7 +691,7 @@ def process_one_csv(csv_path, output_dir):
     plot_qc(toe_height_smooth, peaks, frame_phase, output_dir, stem)
     plot_phase_percentages(cycles_df, output_dir, stem)
     plot_toe_clearance_drag(cycles_df, output_dir, stem)
-    plot_stick_diagram(stick_df, output_dir, stem)
+    plot_stick_diagram(x_norm, y_height, cycles_df, output_dir, stem)
 
     print("=" * 70)
     print(f"Archivo procesado: {csv_path.name}")
