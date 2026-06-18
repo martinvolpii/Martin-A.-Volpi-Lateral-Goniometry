@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-gait_phase.py
+gait_phase_.py
 
 Analisis independiente de fases del ciclo de marcha desde CSV de DeepLabCut.
 
-Este script esta inspirado en la logica de los repositorios de KiehnLab/Allodi:
 - puntos laterales: crest, hip, knee, ankle, foot, toe
 - suavizado temporal de coordenadas
 - deteccion de ciclos con peaks del toe
@@ -62,6 +61,7 @@ STAGE_ORDER = ["P30", "P37", "P44", "P51", "P65", "P85"]
 GROUP_ORDER = ["WT", "SOD1"]
 
 # Umbral de swing en unidades normalizadas.
+# En la logica Kiehn/Allodi, dentro de cada ciclo se lleva el toe al suelo = 0.
 # swing = toe y foot por encima de este umbral.
 SWING_HEIGHT_THRESHOLD_NORM = 0.03
 
@@ -86,8 +86,9 @@ MIN_PHASE_RUN_FRAMES = 2
 # Stick diagram.
 STICK_PERCENTAGES_TO_PLOT = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 STICK_SPACING = 0.35  # usado solo para el CSV/compatibilidad
-STICK_DELTA = 0.045
-STICK_STANCE_DELTA_FACTOR = 0.10
+STICK_DELTA = 0.015
+STICK_STANCE_DELTA_FACTOR = 0.05
+STICK_VERTICAL_SCALE = 0.75
 
 # Si tus puntos se llaman distinto en DeepLabCut, cambia el nombre de la derecha.
 # La izquierda NO la cambies.
@@ -621,7 +622,7 @@ def plot_stick_diagram(x_norm, y_height, cycles_df, output_dir, stem):
 
         for local_idx, frame_idx in enumerate(range(start_frame, end_frame)):
             x_frame = x_norm[frame_idx, :].copy()
-            y_frame = y_height[frame_idx, :].copy() - ground_norm
+            y_frame = (y_height[frame_idx, :].copy() - ground_norm) * STICK_VERTICAL_SCALE
 
             if swing[local_idx]:
                 step += STICK_DELTA
@@ -640,7 +641,7 @@ def plot_stick_diagram(x_norm, y_height, cycles_df, output_dir, stem):
                 alpha=0.80,
             )
 
-    ax.set_title("Stick diagram continuo: stance gris, swing rojo")
+    ax.set_title("Stick diagram continuo comprimido: stance gris, swing rojo")
     ax.set_aspect("equal", adjustable="datalim")
     ax.axis("off")
     fig.tight_layout()
